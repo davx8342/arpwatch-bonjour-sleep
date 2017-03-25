@@ -1,0 +1,68 @@
+*** arpwatch-2.1a10/db.c	2000-10-01 00:39:58.000000000 +0100
+--- arpwatch-2.1a10/db.c	2017-03-25 23:07:13.409313332 +0000
+***************
+*** 75,80 ****
+--- 75,91 ----
+  	struct ainfo *next;
+  };
+  
++ int isignored(u_char *e) {
++     static char* ignored[] = {"aa:bb:cc:dd:ee:ff", NULL};
++     char **p;
++ 
++     for (p = ignored; *p != NULL; p++)
++        if (memcmp(e, *p, strlen(*p)) == 0)
++            return 1;
++ 
++     return 0;
++ }
++ 
+  /* Address hash table */
+  static struct ainfo ainfo_table[HASHSIZE];
+  
+***************
+*** 134,141 ****
+  			    (isdecnet(e) || isdecnet(e2)))
+  				dosyslog(LOG_INFO,
+  				    "suppressed DECnet flip flop", a, e, e2);
+! 			else
+! 				report("flip flop", a, e, e2, &t, &t2);
+  			ap->elist[1] = ap->elist[0];
+  			ap->elist[0] = ep;
+  			ep->t = t;
+--- 145,156 ----
+  			    (isdecnet(e) || isdecnet(e2)))
+  				dosyslog(LOG_INFO,
+  				    "suppressed DECnet flip flop", a, e, e2);
+! 			else if ((isignored(e) == 0) || (isignored(e2) == 0)) {
+!                                dosyslog(LOG_INFO, "Bonjour sleep service", a, e, e2);
+!                             } else {
+! 		               report("flip flop", a, e, e2, &t, &t2);
+!                             }
+! 
+  			ap->elist[1] = ap->elist[0];
+  			ap->elist[0] = ep;
+  			ep->t = t;
+***************
+*** 165,171 ****
+  	/* New ether address */
+  	e2 = ap->elist[0]->e;
+  	t2 = ap->elist[0]->t;
+! 	report("changed ethernet address", a, e, e2, &t, &t2);
+  	/* Make room at head of list */
+  	alist_alloc(ap);
+  	len = ap->ecount * sizeof(ap->elist[0]);
+--- 180,192 ----
+  	/* New ether address */
+  	e2 = ap->elist[0]->e;
+  	t2 = ap->elist[0]->t;
+!         if ((isignored(e) == 0) || (isignored(e2) == 0)) {
+!            dosyslog(LOG_INFO, "Bonjour sleep service", a, e, e2);
+!         } else {
+!             report("changed ethernet address", a, e, e2, &t, &t2);
+!         }
+! 
+! 
+  	/* Make room at head of list */
+  	alist_alloc(ap);
+  	len = ap->ecount * sizeof(ap->elist[0]);
